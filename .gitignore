@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Environment Variables & Secrets (CRITICAL: Do NOT push!)
+.env
+.env.local
+.env.*.local
+
+# Generated Tests & Temporary Prompt Outputs
+temp-*
+
+# Test Reports & Execution Results
+
+blob-report/
+*.log
+
+# Editor & IDE Configs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

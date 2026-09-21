@@ -1,0 +1,635 @@
+
+You are an expert software test engineer.
+
+Your task is to generate a deterministic automated end-to-end
+regression test for an EXISTING application.
+
+============================================================
+USER REQUEST
+============================================================
+
+Créer un device
+
+============================================================
+INTENT
+============================================================
+
+Action:
+create
+
+Entity:
+device
+
+============================================================
+SOURCE OF TRUTH
+============================================================
+
+The workflow classification produced by the source-code
+analyzer is authoritative.
+
+Do NOT invent:
+
+- selectors
+- routes
+- URLs
+- API endpoints
+- database behavior
+- email interfaces
+- confirmation tokens
+- test infrastructure
+- application behavior
+
+============================================================
+MAIN WORKFLOW
+============================================================
+
+
+------------------------------------------------------------
+FUNCTION
+------------------------------------------------------------
+
+Name:
+createDevice
+
+File:
+/home/ilyess/web - Devops/Acoba/Backend_stage2025/graphql/resolvers/Devices.js
+
+Workflow role:
+MAIN
+
+Reason:
+
+
+------------------------------------------------------------
+CODE
+------------------------------------------------------------
+
+CODE_NOT_AVAILABLE
+Only the function signature was detected.
+
+
+============================================================
+POST-CREATION CONFIRMATION
+============================================================
+
+No post-creation confirmation detected.
+
+============================================================
+ALTERNATIVE WORKFLOW
+============================================================
+
+No alternative workflow detected.
+
+IMPORTANT:
+
+The alternative workflow MUST NOT be executed in the main
+happy-path test.
+
+============================================================
+UNRELATED FUNCTIONS
+============================================================
+
+
+- deleteDeviceByName
+  File: /home/ilyess/web - Devops/Acoba/Backend_stage2025/graphql/resolvers/Devices.js
+  Reason: 
+
+
+- updateDevice
+  File: /home/ilyess/web - Devops/Acoba/Backend_stage2025/graphql/resolvers/Devices.js
+  Reason: 
+
+
+IMPORTANT:
+
+Unrelated functions MUST NOT be executed.
+
+============================================================
+SUPPORTING SOURCE CODE
+============================================================
+
+
+------------------------------------------------------------
+FILE
+------------------------------------------------------------
+
+Name:
+Device.js
+
+Path:
+/home/ilyess/web - Devops/Acoba/Backend_stage2025/models/Device.js
+
+Workflow role:
+SUPPORTING CODE
+
+Reason:
+Mongoose Device model used by createDevice.
+
+------------------------------------------------------------
+CODE
+------------------------------------------------------------
+
+const mongoose = require('mongoose');
+
+const Schema = mongoose.Schema;
+
+const deviceSchema = new Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    firmware_version: {
+        type: String,
+        required: true
+    },
+    company: {
+        type: Schema.Types.ObjectId, 
+        ref: 'Company'
+    }
+}, {
+    timestamps: true  // ✅ Ceci est à mettre ici, en 2e argument de Schema
+});
+
+deviceSchema.index({ name: 'text', firmware_version: 'text' });
+module.exports = mongoose.model('Device', deviceSchema);
+
+
+
+------------------------------------------------------------
+FILE
+------------------------------------------------------------
+
+Name:
+index.js
+
+Path:
+/home/ilyess/web - Devops/Acoba/Backend_stage2025/graphql/schema/index.js
+
+Workflow role:
+SUPPORTING CODE
+
+Reason:
+GraphQL schema defining the createDevice mutation.
+
+------------------------------------------------------------
+CODE
+------------------------------------------------------------
+
+const { buildSchema } = require('graphql');
+
+module.exports = buildSchema(`
+    type Device {
+        _id: ID!
+        name: String!
+        firmware_version: String!
+        company: Company!
+    }
+
+    type Company {
+        _id: ID!
+        name: String!
+        description: String!
+        devices: [Device!]
+        created_at: String!
+        updated_at: String!
+    }
+
+    type User {
+        _id: ID!
+        email: String!
+        password: String
+        role: String!
+        companies: [Company!]
+        isConfirmed: Boolean
+    }
+
+    type History {
+        _id: ID!
+        device: Device!
+        adress : String!
+        vehicule_status: String!
+        gprs_signal: String!
+        data_time: String!
+        hourmetre: String!
+    }
+
+    input AddDeviceInput {
+        name: String!
+        firmware_version: String!
+        company_name: String!
+    }
+
+    input AddCompanyInput {
+        name: String!
+        description: String!
+    }
+
+    input AddUserInput {
+        email: String!
+        password: String!
+        role: String!
+    }
+
+    type AuthData {
+        userId: ID!
+        token: String!
+        tokenExpiration: Int!
+        role: String!
+    }
+
+    type Message {
+        message: String!
+    }
+
+    type StatsDevicePerCompany {
+        companyName: String!
+        devicesCount: Int!
+    }
+
+    type StatsEvolution {
+        date: String! 
+        count: Int!
+    }
+
+    input AddHistoryInput {
+        device_id: ID!
+        adress: String!
+        vehicule_status: String!
+        gprs_signal: String!
+        data_time: String!
+        hourmetre: String!
+    }
+    
+    input UpdateDeviceInput {
+        name: String
+        firmware_version: String
+        company_id: ID
+    }
+
+    type DeviceByCompany {
+        company: Company!
+        devices: [Device!]!
+    }
+
+    type ConfirmMessage {
+        message: String!
+    }
+
+    type RootQuery {
+        devices: [Device]
+        devicesByRole: [DeviceByCompany!]!
+        companies: [Company!]
+        users: [User!]
+        login(email: String!, password: String!): AuthData!
+        histories: [History!] 
+        devicesCountPerCompany: [StatsDevicePerCompany!]!
+        devicesEvolution(startDate: String!, endDate: String!): [StatsEvolution!]!
+        searchDevices(query: String!): [Device!]
+        searchCompanies(query: String!): [Company!]
+        
+
+    }
+
+    type RootMutation {
+        createDevice(deviceInput: AddDeviceInput!): Device
+        createCompany(companyInput: AddCompanyInput!): Company
+        createUser(userInput: AddUserInput!): User
+        confirmUser(token: String!): ConfirmMessage
+        deleteDeviceByName(name: String!): Boolean
+        deleteCompany(companyId: ID!): Boolean
+        createHistory(historyInput: AddHistoryInput!): History
+        updateUserRole(userId: ID!, newRole: String!): User
+        requestPasswordReset(email: String!): Message
+        resetPassword(token: String!, newPassword: String!): Message
+        addCompanyToUser(userId: ID!, companyId: ID!): User!
+        removeCompanyFromUser(userId: ID!, companyId: ID!): User
+        updateDevice(deviceId: ID!, deviceInput: UpdateDeviceInput!): Device
+        resendConfirmationEmail(email: String!): Message
+    }
+
+    schema {
+        query: RootQuery
+        mutation: RootMutation
+    } 
+`);
+
+
+
+------------------------------------------------------------
+FILE
+------------------------------------------------------------
+
+Name:
+createdevice.jsx
+
+Path:
+/home/ilyess/web - Devops/Acoba/Frontend_stage2025/src/components/createdevice.jsx
+
+Workflow role:
+SUPPORTING CODE
+
+Reason:
+Frontend component containing the Create Device button and form.
+
+------------------------------------------------------------
+CODE
+------------------------------------------------------------
+
+import React, { useState, useEffect } from 'react';
+import Modal from './modal/modal';
+import { gql, useMutation, useQuery } from '@apollo/client';
+import '../styles/createdevice.css';
+
+const GET_COMPANIES = gql`
+  query GetCompanies {
+    companies {
+      _id
+      name
+    }
+  }
+`;
+
+const CREATE_DEVICE = gql`
+  mutation CreateDevice($deviceInput: AddDeviceInput!) {
+    createDevice(deviceInput: $deviceInput) {
+      _id
+      name
+      firmware_version
+      company {
+        _id
+        name
+      }
+    }
+  }
+`;
+
+function Createdevice({ onDeviceCreated }) {
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    firmware_version: '',
+    company_name: ''
+  });
+
+  const { loading, error, data } = useQuery(GET_COMPANIES);
+
+  useEffect(() => {
+    if (data && data.companies.length > 0 && !formData.company_name) {
+      setFormData(prev => ({ ...prev, company_name: data.companies[0].name }));
+    }
+  }, [data]);
+
+  const [createDevice, { loading: mutationLoading, error: mutationError }] = useMutation(CREATE_DEVICE, {
+    onCompleted: (data) => {
+      if (onDeviceCreated) onDeviceCreated(data.createDevice);
+      setShowModal(false);
+      setFormData({ name: '', firmware_version: '', company_name: '' });
+    },
+  });
+
+  const handleChange = e => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleConfirm = async () => {
+    try {
+      await createDevice({ variables: { deviceInput: formData } });
+    } catch (err) {
+      console.error('Create device error', err);
+    } finally {
+      setShowModal(false);
+    }
+  };
+
+  return (
+    <div className='device-container'>
+      <button className="btn-create-device" onClick={() => setShowModal(true)}>
+        + Ajouter un Nouveau Device
+      </button>
+
+      {showModal && (
+        <Modal
+          title="Create Device"
+          canCancel
+          canConfirm
+          onCancel={() => setShowModal(false)}
+          onConfirm={handleConfirm}
+        >
+          <div className="form-control">
+            <label>Name</label>
+            <input type="text" name="name" value={formData.name} onChange={handleChange} />
+          </div>
+
+          <div className="form-control">
+            <label>Firmware Version</label>
+            <input
+              type="text"
+              name="firmware_version"
+              value={formData.firmware_version}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-control">
+            <label>Company</label>
+            {loading && <p>Loading companies...</p>}
+            {error && <p>Error loading companies</p>}
+            {!loading && !error && (
+              <select name="company_name" value={formData.company_name} onChange={handleChange}>
+                {data.companies.map(company => (
+                  <option key={company._id} value={company.name}>
+                    {company.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {mutationLoading && <p>Loading...</p>}
+          {mutationError && <p style={{ color: 'red' }}>{mutationError.message}</p>}
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+export default Createdevice;
+
+
+
+============================================================
+BUSINESS WORKFLOW
+============================================================
+
+
+AUTHENTICATION PREREQUISITE
+
+This page requires the user to be logged in.
+The test MUST login first before accessing the devices page.
+
+Login credentials to use in tests:
+  Email    : saddi.ilyes1@gmail.com
+  Password : ilyes2003
+
+Steps to authenticate:
+  1. Go to http://localhost:5173/login
+  2. Fill input[placeholder="Entrer email"] with saddi.ilyes1@gmail.com
+  3. Fill input[placeholder="Entrer mot de passe"] with ilyes2003
+  4. Click button.login-btn
+  5. Wait for navigation to complete (page.waitForURL with ** glob or just waitForTimeout 1000)
+
+VERIFIED SELECTORS (from createdevice.jsx and modal.jsx source code)
+
+Button to open the Create Device modal:
+  button.btn  — the first button.btn on the page (text: "+ Create Device")
+  Located at: http://localhost:5173/ (home/devices page)
+
+Form inputs inside the modal:
+  input[name="name"]               — Device name field
+  input[name="firmware_version"]   — Firmware version field
+  select[name="company_name"]      — Company dropdown (options loaded dynamically from GraphQL)
+
+IMPORTANT for the company dropdown:
+  - Options are loaded asynchronously from GraphQL.
+  - Do NOT select by company name — it is not known in advance.
+  - Use index to select the first available option:
+      await page.selectOption('select[name="company_name"]', { index: 0 });
+  - Wait for the select to have options before selecting:
+      await page.waitForFunction(() => document.querySelector('select[name="company_name"]').options.length > 0);
+
+Modal action buttons (from modal.jsx):
+  Cancel button : button.btn:has-text("Cancel")
+  Confirm button: button.btn:has-text("Confirm")
+
+EXACT PLAYWRIGHT CODE STEPS TO FOLLOW:
+
+1. Login:
+   await page.goto('http://localhost:5173/login');
+   await page.fill('input[placeholder="Entrer email"]', 'saddi.ilyes1@gmail.com');
+   await page.fill('input[placeholder="Entrer mot de passe"]', 'ilyes2003');
+   await page.click('button.login-btn');
+   await page.waitForURL('**/');
+
+2. Open Modal:
+   await page.click('button.btn-create-device');
+   await page.waitForSelector('input[name="name"]');
+
+3. Fill Form:
+   await page.fill('input[name="name"]', 'Device-' + Date.now());
+   await page.fill('input[name="firmware_version"]', '1.0.0');
+
+4. Select Company:
+   await page.waitForSelector('select[name="company_name"]', { state: 'attached' });
+   await page.selectOption('select[name="company_name"]', { index: 0 });
+
+5. Submit & Verify:
+   await page.click('button.btn:has-text("Confirm")');
+   await expect(page.locator('input[name="name"]')).toBeHidden();
+
+
+============================================================
+FRONTEND ENTRY POINT
+============================================================
+
+The frontend runs at: http://localhost:5173
+
+============================================================
+VERIFIED SELECTORS
+============================================================
+
+The following selectors were extracted automatically from the
+frontend source code. Use ONLY these selectors. Do NOT invent
+any other selector.
+
+- button.btn-create-device
+- button with text: "setShowModal(true)}>
+        + Ajouter un Nouveau Device"
+
+============================================================
+GRAPHQL
+============================================================
+
+Use the GraphQL endpoint only if the frontend source code
+explicitly proves its URL. Do not invent endpoints.
+
+============================================================
+EMAIL
+============================================================
+
+The application sends a confirmation email. However, no
+deterministic email-testing mechanism is assumed to exist.
+
+EMAIL_TEST_MECHANISM_PROVIDED:
+NO
+
+If no test email mechanism is provided, output:
+
+EMAIL_TEST_MECHANISM_NOT_PROVIDED
+
+Do NOT automate Gmail or another imaginary inbox.
+Do NOT invent a confirmation token.
+
+============================================================
+MAIN TEST
+============================================================
+
+The main test must:
+
+1. Follow the workflow summary from the provided source code.
+2. Use only verified selectors.
+3. Do not invent routes, selectors, or assertions not supported by the source.
+4. Make the final assertion consistent with the actual UI state after the main action.
+
+The test may cover confirmation only if a deterministic
+confirmation mechanism is actually available from the
+provided source code. Otherwise report
+EMAIL_TEST_MECHANISM_NOT_PROVIDED.
+
+============================================================
+ERROR SCENARIOS
+============================================================
+
+Describe separately:
+
+1. Existing email. Expected backend error: User already exists
+2. Missing confirmation email. Use resendConfirmationEmail only
+   in a separate recovery test.
+3. Invalid confirmation token. Expected backend error:
+   Invalid token
+
+Do NOT execute these scenarios inside the main happy path.
+
+============================================================
+OUTPUT FORMAT
+============================================================
+
+Your response MUST contain ONLY the raw Playwright test code.
+
+Do NOT include any of the following:
+
+- Section headings (# 1. WORKFLOW ANALYSIS, etc.)
+- Markdown code fences (triple backticks)
+- Analysis text
+- Scenario descriptions
+- Tables
+- Explanations
+
+Return ONLY:
+
+- import statements
+- test.describe / test blocks
+- page actions
+- assertions
+- short inline comments if useful
+
+Nothing before the code. Nothing after the code.
+
+============================================================
+FINAL RULE
+============================================================
+
+The provided source code is the only source of truth.
+If information is missing: STATE IT. Never guess.
